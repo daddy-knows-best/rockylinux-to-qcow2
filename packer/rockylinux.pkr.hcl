@@ -13,6 +13,34 @@ packer {
     }
   }
 }
+source "qemu" "rocky10-0" {
+  headless                  = true
+  accelerator               = "kvm" #"hvf" to run this packer template on MacOS, "kvm" if not
+  iso_url                   = "https://dl.rockylinux.org/pub/rocky/10/images/x86_64/Rocky-10-GenericCloud-Base.latest.x86_64.qcow2"
+  iso_checksum              = "file:./ROCKYSHA256SUMS"
+  output_directory          = "output/rocky10.0"
+  shutdown_command          = "rm -f /home/packer/.ssh/authorized_keys && sudo rm -f /root/.ssh/authorized_keys && echo 'packer' | sudo -S shutdown -P now"
+  disk_size                 = "10G"
+  format                    = "qcow2"
+  http_directory            = "http"
+  ssh_username              = "packer"
+  ssh_private_key_file      = "~/.ssh/id_ed25519"
+  ssh_port                  = 22
+  ssh_clear_authorized_keys = true
+  ssh_timeout               = "5m"
+  memory                    = 4096
+  disk_image                = true
+  disk_interface            = "virtio"
+  net_device                = "virtio-net"
+  boot_wait                 = "15s"
+  use_default_display       = true
+  vm_name                   = "rocky10.0"
+  qemuargs = [
+    ["-cpu", "Haswell"],
+    ["-display", "none"],
+    ["-cdrom", "disk-ssh-pub.img"]
+  ]
+}
 
 source "qemu" "rocky95" {
   headless                  = true
@@ -28,7 +56,7 @@ source "qemu" "rocky95" {
   ssh_private_key_file      = "~/.ssh/id_ed25519"
   ssh_port                  = 22
   ssh_clear_authorized_keys = true
-  ssh_timeout               = "60m"
+  ssh_timeout               = "5m"
   memory                    = 4096
   disk_image                = true
   disk_interface            = "virtio"
@@ -45,7 +73,10 @@ source "qemu" "rocky95" {
 
 
 build {
-  sources = ["source.qemu.rocky95"]
+  sources = [
+    "source.qemu.rocky10-0",
+    "source.qemu.rocky95"
+  ]
 
   provisioner "shell" {
     script = "shell/shell-provisioner.sh"
